@@ -7,7 +7,7 @@ import Text.Read
 import Data.Maybe
     
 data SteamUniverse = UnivInvalid | UnivPublic | UnivBeta |  UnivInternal | UnivDev deriving (Enum)
-data SteamID = SteamID {universe :: SteamUniverse, accountType :: SteamInstance, accountId :: Int}
+data SteamID = SteamID {universe :: SteamUniverse, accountType :: SteamInstance, accountId :: Int, path :: FilePath}
 data SteamInstance = SteamInstance {char :: Char, typeId :: Int, defaultInst :: Int}
 
 defaultUserData :: FilePath -> FilePath -> Maybe FilePath
@@ -21,7 +21,7 @@ buildSteamID :: FilePath -> Maybe SteamID
 buildSteamID path = do
   let strUserId = takeBaseName path
   actualId <- readMaybe strUserId :: Maybe Int
-  Just SteamID {universe = UnivPublic, accountType = instanceInfo 'U', accountId = actualId}
+  Just SteamID {universe = UnivPublic, accountType = instanceInfo 'U', accountId = actualId, path = path}
  
 getSteamIDs :: IO [SteamID]
 getSteamIDs = do
@@ -29,7 +29,9 @@ getSteamIDs = do
   let userData = defaultUserData homeDir "steamdir"
   userDirs <- case userData of
                 Nothing -> return []
-                Just d -> getDirectoryContents d
+                Just d -> do                  
+                  subdirs <- getDirectoryContents d
+                  return $ map (\l -> joinPath (d:[l])) subdirs
   let steamIds = map buildSteamID userDirs
   return $ catMaybes steamIds
                    
@@ -63,3 +65,6 @@ steamId3 (SteamID {universe = u, accountType = at,  accountId = ai})
 steamIdLegacy :: SteamID -> String
 steamIdLegacy (SteamID {universe = u, accountType = at, accountId = ai})
     = concat ["STEAM_", show (fromEnum u - 1), ":", show (ai .&. bit 0), ":", show ((ai `shiftR` 1) .&. mask 31 )]
+
+shortcutFileLoc :: SteamID -> FilePath
+shortcutFileLoc s = joinPath [path s, "config", "shortcuts.vdf"]

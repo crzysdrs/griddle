@@ -1,6 +1,7 @@
-module Steam.Shortcuts where
+module Steam.Shortcuts (readShortcuts) where
 import Text.ParserCombinators.Parsec
 import Data.Char
+import Steam
     
 data SteamShortcut = SteamShortcut {appName :: String, exe :: String, startDir :: String, icon :: String, tags :: [String]} deriving (Show)
                    
@@ -70,3 +71,11 @@ namedDataLen name n =
       string name
       string "\0000"
       count n anyChar
+
+readShortcuts :: SteamID -> IO (Maybe [SteamShortcut])
+readShortcuts s = do
+  let f = shortcutFileLoc s
+  input <- readFile f
+  return $ case parse steamShortcutFile f input of
+             Left e -> Nothing
+             Right r -> Just r
