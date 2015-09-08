@@ -50,16 +50,16 @@ instanceInfo c@'a' = SteamInstance {char=c, typeId=10, defaultInst=0}
 instanceInfo _     = SteamInstance {char='I', typeId=0, defaultInst=0}
                      
 mask :: (Num a, Bits a) => Int -> a
-mask n = (bit n) - 1
+mask n = bit n - 1
     
 steamId64 :: SteamID -> Int
 steamId64 (SteamID {universe = u, accountType = at,  accountId = ai})
-    = foldl (.|.) 0 [(fromEnum u) `shift` 56,  (typeId at) `shift` 52, (defaultInst at) `shift` 32,  ai]
+    = foldl (.|.) 0 [fromEnum u `shift` 56, typeId at `shift` 52, defaultInst at `shift` 32,  ai]
             
-steamId3 :: SteamID -> [Char]
+steamId3 :: SteamID -> String
 steamId3 (SteamID {universe = u, accountType = at,  accountId = ai})
     = concat ["[", [char at], ":", show (fromEnum u), ":", show ai, "]"]
                          
-steamIdLegacy :: SteamID -> [Char]
+steamIdLegacy :: SteamID -> String
 steamIdLegacy (SteamID {universe = u, accountType = at, accountId = ai})
-    = concat ["STEAM_", show ((fromEnum u) - 1), ":", show (ai .&. (bit 0)), ":", show ((ai `shiftR` 1) .&. mask 31 )]
+    = concat ["STEAM_", show (fromEnum u - 1), ":", show (ai .&. bit 0), ":", show ((ai `shiftR` 1) .&. mask 31 )]
