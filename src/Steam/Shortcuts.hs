@@ -1,81 +1,62 @@
-module Steam.Shortcuts (readShortcuts) where
-import Text.ParserCombinators.Parsec
-import Data.Char
+module Steam.Shortcuts
+    (
+     SteamShortcut(..),
+     readShortcuts,
+     writeShortcuts
+    )
+    where
 import Steam
+import Steam.BinVDF
+import Data.Maybe
     
+shortcutKeyList :: [String]   
+shortcutKeyList = ["appname", "Exe", "StartDir", "icon", "tags"]
+shortcutStem :: [String]
+shortcutStem = ["Shortcuts"]
+               
 data SteamShortcut = SteamShortcut {appName :: String, exe :: String, startDir :: String, icon :: String, tags :: [String]} deriving (Show)
-                   
-steamShortcutFile :: GenParser Char st [SteamShortcut]
-steamShortcutFile =
-    do
-      result <- namedArray 0 "shortcuts" shortcut
-      string "\0008"
-      eof
-      return result
 
-namedArray :: Int -> String ->  GenParser Char st a -> GenParser Char st [a]
-namedArray d name f =
-    do
-      string "\0000"
-      string name
-      string "\0000"
-      result <- many (arrayElem d f)
-      string "\0008"
-      return result
-             
-arrayElem :: Int -> GenParser Char st a -> GenParser Char st a
-arrayElem d f =
-    do
-      string [chr d]
-      numericLit
-      f
-             
-shortcut :: GenParser Char st SteamShortcut
-shortcut =
-    do appName <- namedString "appname"
-       exeName <- namedString "exe"
-       startDir <- namedString "StartDir"
-       icon <- namedString "icon"
-       icon <- namedString "ShortcutPath"
-       hidden <- namedDataLen "Hidden" 4
-       tags <- namedArray 1 "tags" stringLit
-       let result = SteamShortcut {appName = appName, exe = exeName, startDir = startDir, icon = icon, tags = tags}
-       string "\0008"
-       return result
-       
-stringLit :: GenParser Char st String
-stringLit = do
-  result <- many (noneOf "\0000")
-  string "\0000"
-  return result
+bang :: [a] -> Int -> Maybe a
+bang [] _ = Nothing
+bang (x:_) 0 = Just x            
+bang (_:xs) n = bang xs (n - 1)
 
-numericLit :: GenParser Char st String
-numericLit =
-    do
-      result <- many digit
-      string "\0000"
-      return result
-         
-namedString :: String -> GenParser Char st String
-namedString n =
-    do
-      string "\0001"
-      string n
-      string "\0000"
-      stringLit
-             
-namedDataLen :: String -> Int -> GenParser Char st String
-namedDataLen name n =
-    do
-      string "\0002"
-      string name
-      string "\0000"
-      count n anyChar
+vdfGetValue :: VDFNode -> Maybe VDFNode
+vdfGetValue (VDFKey _ v) = Just v
+vdfGetValue _ = Nothing
+
+vdfChildren :: VDFNode -> [VDFNode]
+vdfChildren (VDFArray cs) = cs
+vdfChildren _ = []
+                
+vdf2shortcuts :: VDFNode -> Maybe [SteamShortcut]
+vdf2shortcuts vdfnode = do
+  stem <- vdfFindKey shortcutStem vdfnode
+  let shortcuts =  map vdf2shortcut (vdfChildren stem)
+  sequence $ filter isJust shortcuts
+
+vdf2shortcut :: VDFNode -> Maybe SteamShortcut
+vdf2shortcut v = do
+  strippedIdx <- vdfGetValue v
+  let nodes = map (\s -> vdfFindKey [s] strippedIdx) shortcutKeyList
+  found <- sequence nodes
+  let g i = do
+        item <- found `bang` i
+        getVDFString item
+  (appText:exeText:startDirText:iconText:_) <- mapM g [0..3]
+  tagNode <- found `bang` 4
+  tagsNodes  <- mapM vdfGetValue $ vdfChildren tagNode
+  tags <- mapM getVDFString tagsNodes
+  Just SteamShortcut {appName = appText, exe = exeText, startDir = startDirText, icon = iconText, tags = tags}
+    where getVDFString item =          
+                case item of
+                  (VDFStr s) -> Just s
+                  _ -> Nothing
 
 readShortcuts :: SteamID -> IO (Maybe [SteamShortcut])
 readShortcuts s = do
-  let f = shortcutFileLoc s
-  input <- readFile f
-  return $ case parse steamShortcutFile f input of
-             Left e -> Nothing
-             Right r -> Just r
+  vdf <- readBinVDF (shortcutFileLoc s)
+  return $ vdf2shortcuts vdf
+                   
+writeShortcuts :: [SteamShortcut] -> IO ()
+writeShortcuts s = undefined
