@@ -7,8 +7,10 @@ module Steam.BinVDF
     where
 import           Control.Monad
 import           Data.Aeson
-import           Data.Binary
-import qualified Data.ByteString as B
+import           Data.Scientific
+import qualified Data.Binary.Get as BinGet
+import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy.Char8 as C
 import           Data.Char
 import           Data.Maybe
 import qualified Data.Text as T
@@ -63,7 +65,10 @@ vdfInt :: GenParser Char st Value
 vdfInt =
     do
       result <- count 4 anyToken
-      return $ Number 0
+      return $ Number $ scientific (toInteger $ bytes2Int result) 0
+
+bytes2Int :: String -> Int
+bytes2Int cs  = fromIntegral $ BinGet.runGet ( BinGet.getWord32le) $ C.pack cs
 
 readBinVDF :: String -> IO (Maybe Value)
 readBinVDF s = do
