@@ -7,27 +7,47 @@ module Steam.Shortcuts
      writeShortcuts
     )
     where
-import Steam
-import Steam.BinVDF
-import Data.Maybe
-import Data.Aeson
-import Data.Aeson.Parser
-import Data.Aeson.Types
+import           Data.Aeson
+import           Data.Aeson.Parser
+import           Data.Aeson.Types
+import qualified Data.HashMap.Strict as HM
+import           Data.Maybe
+import qualified Data.Text as T
+import           Debug.Trace
+import           Steam
+import           Steam.BinVDF
+    
+data SteamShortcut = SteamShortcut {
+      appName :: String,
+      exe :: String,
+      startDir :: String,
+      icon :: String,
+      tags :: [String],
+      hidden :: Maybe Int,
+      path :: Maybe String
+    } deriving (Show)
 
-data SteamShortcut = SteamShortcut {appName :: String, exe :: String, startDir :: String, icon :: String, tags :: [String]} deriving (Show)
-
+-- | Turn all keys in a JSON object to lowercase.
+jsonLower :: Value -> Value
+jsonLower (Object o) = Object . HM.fromList . map lowerPair . HM.toList $ o
+  where lowerPair (key, val) = (T.toLower key, val)
+jsonLower x = x
+                   
 instance FromJSON SteamShortcut where
-    parseJSON = withObject "shortcut" $ \o ->
+    parseJSON =  withObject "shortcut" buildShortcut . jsonLower
+        where buildShortcut o =
                 do
-                  appName  <- o .: "AppName"
-                  exe      <- o .: "Exe"
-                  startDir <- o .: "StartDir"
+                  appName  <- o .: "appname"
+                  exe      <- o .: "exe"
+                  startDir <- o .: "startdir"
                   icon     <- o .: "icon"
                   tags     <- o .: "tags"
+                  path     <- o .:? "shortcutpath" 
+                  hidden   <- o .:? "hidden"                              
                   return SteamShortcut {..}
-
+                           
 shortcuts :: Value -> Parser [SteamShortcut]
-shortcuts =  withObject "x" $ \o -> o .: "Shortcuts"
+shortcuts =  withObject "x"  (.: "shortcuts") . jsonLower
 
 readShortcuts :: SteamID -> IO (Maybe [SteamShortcut])
 readShortcuts s = readShortcutsStr (shortcutFileLoc s)
