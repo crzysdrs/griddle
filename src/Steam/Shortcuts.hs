@@ -46,6 +46,17 @@ instance FromJSON SteamShortcut where
                   hidden   <- o .:? "hidden"
                   return SteamShortcut {..}
 
+instance ToJSON SteamShortcut where
+    toJSON s = object [
+                "AppName"       .= appName s,
+                "exe"           .= exe s,
+                "StartDir"      .= startDir s,
+                "icon"          .= icon s,
+                "ShortcutPath"  .= Steam.Shortcuts.path s,
+                "Hidden"        .= hidden s,
+                "tags"          .= tags s
+               ]
+
 shortcuts :: Value -> Parser [SteamShortcut]
 shortcuts =  withObject "x"  (.: "shortcuts") . jsonLower
 
@@ -55,9 +66,13 @@ readShortcuts s = readShortcutsStr (shortcutFileLoc s)
 readShortcutsStr :: String -> IO (Maybe [SteamShortcut])
 readShortcutsStr s = do
   vdf <- readBinVDF s
+  trace (show vdf) $ return ()
   case vdf of
     Just n ->  return $ parseMaybe shortcuts n
     Nothing -> return Nothing
 
-writeShortcuts :: [SteamShortcut] -> IO ()
-writeShortcuts s = undefined
+writeShortcuts :: SteamID -> [SteamShortcut] -> IO ()
+writeShortcuts steamid = writeShortcutsStr (shortcutFileLoc steamid)
+
+writeShortcutsStr :: FilePath -> [SteamShortcut] -> IO ()
+writeShortcutsStr p shorts = writeBinVDF p $ Object $ HM.fromList [("Shortcuts", toJSON shorts)]

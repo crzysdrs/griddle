@@ -7,5 +7,8 @@ main :: IO ()
 main = do
   ids <- getSteamIDs
   shortcuts <- mapM readShortcuts ids
-  let found = catMaybes shortcuts
-  putStrLn (unlines (map show found))
+  let p = zip ids shortcuts
+  m <- mapM (\(x,y) -> case y of
+    Just s -> writeShortcuts x s
+    Nothing -> putStrLn "Not Outputting" ) p
+  return ()
