@@ -16,7 +16,7 @@ import qualified Data.Text as T
 import           Debug.Trace
 import           Steam
 import           Steam.BinVDF
-    
+
 data SteamShortcut = SteamShortcut {
       appName :: String,
       exe :: String,
@@ -32,7 +32,7 @@ jsonLower :: Value -> Value
 jsonLower (Object o) = Object . HM.fromList . map lowerPair . HM.toList $ o
   where lowerPair (key, val) = (T.toLower key, val)
 jsonLower x = x
-                   
+
 instance FromJSON SteamShortcut where
     parseJSON =  withObject "shortcut" buildShortcut . jsonLower
         where buildShortcut o =
@@ -42,10 +42,10 @@ instance FromJSON SteamShortcut where
                   startDir <- o .: "startdir"
                   icon     <- o .: "icon"
                   tags     <- o .: "tags"
-                  path     <- o .:? "shortcutpath" 
-                  hidden   <- o .:? "hidden"                              
+                  path     <- o .:? "shortcutpath"
+                  hidden   <- o .:? "hidden"
                   return SteamShortcut {..}
-                           
+
 shortcuts :: Value -> Parser [SteamShortcut]
 shortcuts =  withObject "x"  (.: "shortcuts") . jsonLower
 
@@ -56,7 +56,7 @@ readShortcutsStr :: String -> IO (Maybe [SteamShortcut])
 readShortcutsStr s = do
   vdf <- readBinVDF s
   case vdf of
-    Just n ->  return $ parseMaybe shortcuts =<< decode (encode n)
+    Just n ->  return $ parseMaybe shortcuts n
     Nothing -> return Nothing
 
 writeShortcuts :: [SteamShortcut] -> IO ()
