@@ -1,0 +1,29 @@
+{
+    "dirs":[
+        "/nfs/roms/"
+    ],
+    "gridproviders":{
+        "consolegrid":{
+            "cmd":"wget http://consolegrid.com/api/top_picture?console={urlencode:console}&game={urlencode:game} -O gridurl && wget $(cat gridurl) -O {img}"
+        }
+    },
+    "actions":{
+        "Game Boy":{
+            "provider":"consolegrid",
+            "provider_args":{"console":"Game Boy", "game":"{name}"},
+            "name":"{name}",
+            "cmd":"/usr/bin/gb --run-rom \"{match}\"",
+            "tags":["Game Boy"],
+            "startdir":"",
+            "icon":"",
+            "img":""
+        }
+    },
+    "rules":[
+        {
+            "title":"Optional Match Title (for debugging)",
+            "match":"/nfs/roms/GameBoy/(.+)\\.(gb)",
+            "action":"Game Boy"
+        }
+    ]
+}
