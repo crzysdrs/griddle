@@ -7,9 +7,11 @@ import           Data.Aeson.Parser
 import           Data.Aeson.Types
 import qualified Data.ByteString.Lazy as BS
 import           Data.HashMap.Lazy as HM
+import           InterpString
+import qualified Data.Text as T
 
 data GriddleProvider = GriddleProvider {
-      provCmd :: String
+      provCmd :: InterpString
     } deriving (Show)
 
 instance FromJSON GriddleProvider where
@@ -18,14 +20,14 @@ instance FromJSON GriddleProvider where
                                     return GriddleProvider {..}
 
 data GriddleAction = GriddleAction {
-      name :: String,
-      actionCmd :: String,
-      tags :: [String],
-      startDir :: Maybe String,
-      icon :: Maybe String,
-      img :: Maybe String,
-      provider :: Maybe String,
-      providerArgs :: Maybe (HM.HashMap String String)
+      name :: InterpString,
+      actionCmd :: InterpString,
+      tags :: [InterpString],
+      startDir :: Maybe InterpString,
+      icon :: Maybe InterpString,
+      img :: Maybe InterpString,
+      provider :: Maybe InterpString,
+      providerArgs :: Maybe (HM.HashMap String InterpString)
     } deriving (Show)
 
 instance FromJSON GriddleAction where
@@ -41,6 +43,10 @@ instance FromJSON GriddleAction where
                   providerArgs <- o .:? "provider_args"
                   return GriddleAction {..}
 
+instance FromJSON InterpString where
+    parseJSON = withText "InterpString" $ \s ->
+                do
+                  return $ parseInterpString (T.unpack s)
 data GriddleRule = GriddleRule {
       title :: Maybe String,
       match :: String,

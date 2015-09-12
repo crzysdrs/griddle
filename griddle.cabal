@@ -29,6 +29,8 @@ executable griddle
                        bytestring,
                        vector,
                        unordered-containers,
-                       scientific
+                       scientific,
+                       HTTP,
+                       MissingH
   hs-source-dirs:      src, src/Steam
   default-language:    Haskell2010

@@ -4,7 +4,7 @@
     ],
     "gridproviders":{
         "consolegrid":{
-            "cmd":"wget http://consolegrid.com/api/top_picture?console={urlencode:console}&game={urlencode:game} -O gridurl && wget $(cat gridurl) -O {img}"
+            "cmd":"wget http://consolegrid.com/api/top_picture?console={urlencode{console}}&game={urlencode{game}} -O gridurl && wget $(cat gridurl) -O {img}"
         }
     },
     "actions":{
