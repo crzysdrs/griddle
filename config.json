@@ -1,6 +1,6 @@
 {
     "dirs":[
-        "/nfs/roms/"
+        "/nfs/Public/Media/Apps/ROMS/"
     ],
     "gridproviders":{
         "consolegrid":{
@@ -8,22 +8,19 @@
         }
     },
     "actions":{
-        "Game Boy":{
+        "Super Nintendo":{
             "provider":"consolegrid",
-            "provider_args":{"console":"Game Boy", "game":"{name}"},
-            "name":"{name}",
-            "cmd":"/usr/bin/gb --run-rom \"{match}\"",
-            "tags":["Game Boy"],
-            "startdir":"",
-            "icon":"",
-            "img":""
+            "provider_args":{"console":"Super Nintendo", "game":"{base}"},
+            "name":"{base}",
+            "cmd":"/usr/bin/zsnes \"{match}\"",
+            "tags":["Super Nintendo"]
         }
     },
     "rules":[
         {
-            "title":"Optional Match Title (for debugging)",
-            "match":"/nfs/roms/GameBoy/(.+)\\.(gb)",
-            "action":"Game Boy"
+            "title":"Super Nintendo Default Rule",
+            "match":"SNES",
+            "action":"Super Nintendo"
         }
     ]
 }

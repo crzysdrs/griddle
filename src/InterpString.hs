@@ -2,7 +2,6 @@ module InterpString
     (
      parseInterpString,
      convertInterpString,
-     interpFuncs,
      InterpString(..)
     )
     where
@@ -11,7 +10,6 @@ import           Data.Char
 import qualified Data.HashMap.Strict as HM
 import           Data.String.Utils
 import           Debug.Trace
-import           Network.HTTP.Base
 import           Text.ParserCombinators.Parsec as Parsec
 import           Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
@@ -67,16 +65,6 @@ parseInterpString str =
    case parse interpString "" str of
      Left e  -> error $ show e
      Right r -> r
-
-interpFuncs :: [(String, (String -> String))]
-interpFuncs = [("upper", map toUpper),
-               ("lower", map toLower),
-               ("urlencode", urlEncode),
-               ("reverse", reverse),
-               ("lstrip", lstrip),
-               ("rstrip", rstrip),
-               ("strip", strip)
-              ]
 
 convertInterpString :: HM.HashMap String String -> HM.HashMap String (String -> String) -> InterpString -> Either String String
 convertInterpString keys funcs (InterpArr arr) = do

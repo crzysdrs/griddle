@@ -24,7 +24,8 @@ data SteamShortcut = SteamShortcut {
       icon :: String,
       tags :: [String],
       hidden :: Maybe Int,
-      path :: Maybe String
+      path :: Maybe String,
+      managed :: Maybe String
     } deriving (Show)
 
 -- | Turn all keys in a JSON object to lowercase.
@@ -44,6 +45,7 @@ instance FromJSON SteamShortcut where
                   tags     <- o .: "tags"
                   path     <- o .:? "shortcutpath"
                   hidden   <- o .:? "hidden"
+                  managed  <- o .:? "managed"
                   return SteamShortcut {..}
 
 instance ToJSON SteamShortcut where
@@ -54,7 +56,8 @@ instance ToJSON SteamShortcut where
                 "icon"          .= icon s,
                 "ShortcutPath"  .= Steam.Shortcuts.path s,
                 "Hidden"        .= hidden s,
-                "tags"          .= tags s
+                "tags"          .= tags s,
+                "managed"       .= managed s
                ]
 
 shortcuts :: Value -> Parser [SteamShortcut]
@@ -66,7 +69,6 @@ readShortcuts s = readShortcutsStr (shortcutFileLoc s)
 readShortcutsStr :: String -> IO (Maybe [SteamShortcut])
 readShortcutsStr s = do
   vdf <- readBinVDF s
-  trace (show vdf) $ return ()
   case vdf of
     Just n ->  return $ parseMaybe shortcuts n
     Nothing -> return Nothing

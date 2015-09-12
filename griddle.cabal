@@ -31,6 +31,8 @@ executable griddle
                        unordered-containers,
                        scientific,
                        HTTP,
-                       MissingH
+                       MissingH,
+                       regex-posix,
+                       safe
   hs-source-dirs:      src, src/Steam
   default-language:    Haskell2010
