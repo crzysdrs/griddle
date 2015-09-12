@@ -1,0 +1,26 @@
+{
+    "dirs":[
+        "/nfs/Public/Media/Apps/ROMS/"
+    ],
+    "gridproviders":{
+        "consolegrid":{
+            "cmd":"wget http://consolegrid.com/api/top_picture?console={urlencode{console}}&game={urlencode{game}} -O gridurl && wget $(cat gridurl) -O {img}"
+        }
+    },
+    "actions":{
+        "Super Nintendo":{
+            "provider":"consolegrid",
+            "provider_args":{"console":"Super Nintendo", "game":"{base}"},
+            "name":"{base}",
+            "cmd":"/usr/bin/zsnes \"{match}\"",
+            "tags":["Super Nintendo"]
+        }
+    },
+    "rules":[
+        {
+            "title":"Super Nintendo Default Rule",
+            "match":"SNES",
+            "action":"Super Nintendo"
+        }
+    ]
+}
