@@ -24,8 +24,7 @@ data SteamShortcut = SteamShortcut {
       icon :: String,
       tags :: [String],
       hidden :: Maybe Int,
-      path :: Maybe String,
-      managed :: Maybe String
+      path :: Maybe String
     } deriving (Show)
 
 -- | Turn all keys in a JSON object to lowercase.
@@ -45,7 +44,6 @@ instance FromJSON SteamShortcut where
                   tags     <- o .: "tags"
                   path     <- o .:? "shortcutpath"
                   hidden   <- o .:? "hidden"
-                  managed  <- o .:? "managed"
                   return SteamShortcut {..}
 
 instance ToJSON SteamShortcut where
@@ -56,8 +54,7 @@ instance ToJSON SteamShortcut where
                 "icon"          .= icon s,
                 "ShortcutPath"  .= Steam.Shortcuts.path s,
                 "Hidden"        .= hidden s,
-                "tags"          .= tags s,
-                "managed"       .= managed s
+                "tags"          .= tags s
                ]
 
 shortcuts :: Value -> Parser [SteamShortcut]

@@ -39,13 +39,21 @@ maybeDefault Nothing d = d
 
 applyAction :: Config -> GriddleRule -> FilePath -> Either String SteamShortcut
 applyAction c r p = do
+  let action = HM.lookup (Config.action r) (actions c)
+  action' <- case action of
+               Nothing -> Left $ concat ["Can't find action ", maybeDefault (title r) "(Unnamed Rule)"]
+               Just a -> Right a
   let vars = HM.fromList
              [
               ("base", takeBaseName p),
               ("file", takeFileName p),
               ("ext", takeExtension p),
+              ("exts", takeExtensions p),
               ("dir", takeDirectory p),
-              ("match", p)
+              ("parent", lastDef "NoParent" (splitPath $ takeDirectory p) ),
+              ("match", p),
+              ("action", Config.action r),
+              ("rule", maybeDefault (title r) "(Unnamed Rule)")
              ]
   let funcs = HM.fromList
               [
@@ -58,10 +66,6 @@ applyAction c r p = do
                ("strip", strip)
               ]
   let conv = convertInterpString vars funcs
-  let action = HM.lookup (Config.action r) (actions c)
-  action' <- case action of
-               Nothing -> Left $ concat ["Can't find action ", maybeDefault (title r) "(Unnamed Rule)"]
-               Just a -> Right a
 
   appName <- conv $ name action'
   exe <- conv $ actionCmd action'
@@ -74,16 +78,13 @@ applyAction c r p = do
     exe=exe,
     Steam.Shortcuts.startDir=startDir,
     Steam.Shortcuts.icon=icon,
-    Steam.Shortcuts.tags=tags,
+    Steam.Shortcuts.tags="griddle":tags,
     Steam.Shortcuts.path=Nothing,
-    hidden=Nothing,
-    managed=Just "Griddle"
+    hidden=Nothing
   }
 
 managedByGriddle :: SteamShortcut -> Bool
-managedByGriddle s = case managed s of
-                       Just manager -> (map toLower manager) == "griddle"
-                       Nothing -> False
+managedByGriddle s = "griddle" `elem` Steam.Shortcuts.tags s
 
 main :: IO ()
 main = do
@@ -110,6 +111,7 @@ main = do
     Just s -> do
                let oldshorts = filter (not . managedByGriddle) s
                let allshorts = oldshorts ++ newshorts'
+               putStrLn $ "Writing " ++ show (length oldshorts) ++ " unmanaged shortcuts too"
                writeShortcuts x allshorts
     Nothing -> putStrLn "Not Outputting" ) p
   return ()

@@ -1,6 +1,7 @@
 {
     "dirs":[
-        "/nfs/Public/Media/Apps/ROMS/"
+        "/nfs/Public/Media/Apps/ROMS/",
+        "/home/crzysdrs/games/SCUMMVM/"
     ],
     "gridproviders":{
         "consolegrid":{
@@ -10,10 +11,38 @@
     "actions":{
         "Super Nintendo":{
             "provider":"consolegrid",
-            "provider_args":{"console":"Super Nintendo", "game":"{base}"},
+            "provider_args":{"console":"{action}", "game":"{base}"},
             "name":"{base}",
-            "cmd":"/usr/bin/zsnes \"{match}\"",
-            "tags":["Super Nintendo"]
+            "cmd":"/usr/bin/zsnes -v 4 \"{match}\"",
+            "tags":["{action}"]
+        },
+        "GameCube":{
+            "provider":"consolegrid",
+            "provider_args":{"console":"{action}", "game":"{base}"},
+            "name":"{base}",
+            "cmd":"/usr/games/dolphin-emu --batch --exec=\"{match}\"",
+            "tags":["{action}"]
+        },
+        "Mednafen":{
+            "provider":"consolegrid",
+            "provider_args":{"console":"{rule}", "game":"{base}"},
+            "name":"{base}",
+            "cmd":"/usr/games/mednafen -video.fs 1 \"{match}\"",
+            "tags":["{rule}"]
+        },
+        "pcsx2":{
+            "provider":"consolegrid",
+            "provider_args":{"console":"{rule}", "game":"{base}"},
+            "name":"{base}",
+            "cmd":"/usr/games/PCSX2 --nogui --noguiprompt \"{match}\" --fullscreen",
+            "tags":["{rule}"]
+        },
+        "scummvm":{
+            "provider":"consolegrid",
+            "provider_args":{"console":"PC", "game":"{base}"},
+            "name":"{parent}",
+            "cmd":"/usr/games/scummvm -g hq3x -f --aspect-ratio -p \"{dir}\" {base}",
+            "tags":["{rule}"]
         }
     },
     "rules":[
@@ -21,6 +50,36 @@
             "title":"Super Nintendo Default Rule",
             "match":"SNES",
             "action":"Super Nintendo"
+        },
+        {
+            "title":"Gamecube Default Rule",
+            "match":"Gamecube",
+            "action":"GameCube"
+        },
+        {
+            "title":"Game Boy Advance",
+            "match":"/GBA/",
+            "action":"Mednafen"
+        },
+        {
+            "title":"Game Boy Color",
+            "match":"/GBC/",
+            "action":"Mednafen"
+        },
+        {
+            "title":"Nintendo Entertainment System",
+            "match":"/NES/",
+            "action":"Mednafen"
+        },
+        {
+            "title":"Playstation 2",
+            "match":"/PS2/",
+            "action":"pcsx2"
+        },
+        {
+            "title":"SCUMMVM",
+            "match":"\\.scummvm$",
+            "action":"scummvm"
         }
     ]
 }
