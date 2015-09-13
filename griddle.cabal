@@ -33,6 +33,7 @@ executable griddle
                        HTTP,
                        MissingH,
                        regex-posix,
-                       safe
+                       safe,
+                       digest
   hs-source-dirs:      src, src/Steam
   default-language:    Haskell2010

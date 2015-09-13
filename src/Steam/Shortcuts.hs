@@ -4,19 +4,22 @@ module Steam.Shortcuts
     (
      SteamShortcut(..),
      readShortcuts,
-     writeShortcuts
+     writeShortcuts,
+     appid
     )
     where
 import           Data.Aeson
 import           Data.Aeson.Parser
 import           Data.Aeson.Types
+import           Data.Bits
+import           Data.Digest.CRC32
 import qualified Data.HashMap.Strict as HM
 import           Data.Maybe
 import qualified Data.Text as T
+import           Data.Word
 import           Debug.Trace
 import           Steam
 import           Steam.BinVDF
-
 data SteamShortcut = SteamShortcut {
       appName :: String,
       exe :: String,
@@ -26,6 +29,12 @@ data SteamShortcut = SteamShortcut {
       hidden :: Maybe Int,
       path :: Maybe String
     } deriving (Show)
+
+appid :: SteamShortcut -> Word64
+appid s =  ((bits32 .|. bit 31) `shiftL` 32) .|. bit 25
+           where bits32 = fromIntegral (crc32 $ byteString (exe s ++ appName s))
+
+byteString s = map (fromIntegral . fromEnum) s :: [Word8]
 
 -- | Turn all keys in a JSON object to lowercase.
 jsonLower :: Value -> Value

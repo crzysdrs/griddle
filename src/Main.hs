@@ -14,6 +14,7 @@ import           Network.HTTP.Base
 import Data.Char
 import InterpString
 import Debug.Trace
+import System.Directory
 
 listFiles :: FilePath -> Bool -> IO [FilePath]
 listFiles s r = do
@@ -111,6 +112,7 @@ main = do
     Just s -> do
                let oldshorts = filter (not . managedByGriddle) s
                let allshorts = oldshorts ++ newshorts'
+               mapM_ (\short -> copyFile "/home/crzysdrs/downloads/mario64.jpg" (joinPath [steamGridDir x, show (appid short) ++ ".jpg"])) newshorts'
                putStrLn $ "Writing " ++ show (length oldshorts) ++ " unmanaged shortcuts too"
                writeShortcuts x allshorts
     Nothing -> putStrLn "Not Outputting" ) p
