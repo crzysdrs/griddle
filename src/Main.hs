@@ -138,8 +138,8 @@ applyAction steamid c r p = do
 
   appName <- conv $ name action'
   exe <- conv $ actionCmd action'
-  startDir <- conv $ maybeDefault (Config.startDir action') (InterpJoin (InterpLookup "dir") (InterpPlain ""))
-  icon <- conv $ maybeDefault (Config.icon action') (InterpPlain "")
+  startDir <- conv $ maybeDefault (Config.startDir action') [InterpStr "dir"]
+  icon <- conv $ maybeDefault (Config.icon action') [InterpStr ""]
   tags <- mapM conv (Config.tags action')
 
   let short = SteamShortcut {
@@ -152,9 +152,9 @@ applyAction steamid c r p = do
     hidden=Nothing
   }
 
-  provider <- conv $ maybeDefault (provider action') (InterpPlain "<undefined>")
+  provider <- conv $ maybeDefault (provider action') [InterpStr "<undefined>"]
   let imgPath = joinPath [steamGridDir steamid, show (appid short) ++ ".jpg"]
-  let hmList =  (++) [("file", InterpPlain p), ("img", InterpPlain imgPath)] $ HM.toList $ maybeDefault (providerArgs action')  (HM.fromList [])
+  let hmList =  (++) [("file", [InterpStr p]), ("img", [InterpStr imgPath])] $ HM.toList $ maybeDefault (providerArgs action')  (HM.fromList [])
   providerArgs <- eitherHash $ mapM interpHashEntry hmList
   let foundProvider = HM.lookup provider (providers c)
 
@@ -169,10 +169,10 @@ runProvider p = do
        do
          success <- localProvider (invArgs p)
          if not success
-         then do
-           success2 <- consoleGridProvider (invArgs p)
-           return ()
-         else putStrLn "Local Provider Found for Some File"
+           then do
+             success2 <- consoleGridProvider (invArgs p)
+             return ()
+           else putStrLn "Local Provider Found for Some File"
   return ()
 
 managedByGriddle :: SteamShortcut -> Bool

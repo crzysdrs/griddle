@@ -19,16 +19,22 @@ instance Arbitrary InterpNode where
                  liftM InterpLookup genInterpPlain,
                  liftM2 InterpCmd genInterpPlain arbitrary
                 ]
-instance Arbitrary InterpString where
+instance Arbitrary InterpTop where
     arbitrary = oneof
                 [
-                 liftM InterpPlain genInterpPlain,
-                 liftM2 InterpJoin arbitrary arbitrary
+                 liftM InterpStr genInterpPlain,
+                 liftM InterpElem arbitrary
                 ]
+
+mergeString :: InterpString -> InterpString
+mergeString ((InterpStr s1):(InterpStr s2):xs) = mergeString (newStr:xs)
+    where newStr = (InterpStr (s1++s2))
+mergeString (x:xs) = x:(mergeString xs)
+mergeString [] = []
 
 interpSuite :: Test
 interpSuite = testGroup "InterpSuite"
-   [ testProperty "interpString Rount Trip" prop_interpStringRoundTrip ]
+   [ testProperty "interpString Round Trip" prop_interpStringRoundTrip ]
 
 prop_interpStringRoundTrip :: InterpString -> Bool
-prop_interpStringRoundTrip is = parseInterpString (deparseInterpString is) == is
+prop_interpStringRoundTrip is = parseInterpString (deparseInterpString is) == mergeString is
