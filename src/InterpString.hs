@@ -52,13 +52,10 @@ identString = do
 escapedCharString :: Parser Char
 escapedCharString = do
   string "\\"
-  c <- oneOf "{}"
-  return $ c
+  oneOf "{}"
 
 normalString :: Parser String
-normalString = do
-  str <- many1 (try escapedCharString <|> noneOf "{}")
-  return $ str
+normalString = many1 (try escapedCharString <|> noneOf "{}")
 
 parseInterpString :: String -> InterpString
 parseInterpString str =
@@ -77,7 +74,7 @@ convertInterpString keys funcs (InterpCmd cmd i) = do
     Just f -> return f
   val <- convertInterpString keys funcs i
   return $ f val
-convertInterpString keys _ (InterpLookup l) = do
+convertInterpString keys _ (InterpLookup l) =
   case HM.lookup l keys of
     Nothing -> Left $ concat ["Specified variable \"", l, "\" not found."]
     Just v -> return v

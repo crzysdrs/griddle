@@ -11,8 +11,7 @@ import           InterpString
 import qualified Data.Text as T
 
 data GriddleProvider = GriddleProvider {
-      provCmd :: InterpString,
-      provFunc :: Maybe (HM.HashMap String String -> IO ())
+      provCmd :: InterpString
     }
 
 instance FromJSON GriddleProvider where
@@ -45,9 +44,8 @@ instance FromJSON GriddleAction where
                   return GriddleAction {..}
 
 instance FromJSON InterpString where
-    parseJSON = withText "InterpString" $ \s ->
-                do
-                  return $ parseInterpString (T.unpack s)
+    parseJSON = withText "InterpString" $ \s -> return $ parseInterpString (T.unpack s)
+
 data GriddleRule = GriddleRule {
       title :: Maybe String,
       match :: String,
@@ -76,7 +74,7 @@ instance FromJSON Config where
                 do
                   rules <- o .: "rules"
                   actions <- o .: "actions"
-                  providers <- o .:? "gridproviders" .!= (HM.fromList ([] :: [(String,GriddleProvider)]))
+                  providers <- o .:? "gridproviders" .!= HM.fromList ([] :: [(String,GriddleProvider)])
                   dirs <- o .: "dirs"
                   return Config {..}
 
