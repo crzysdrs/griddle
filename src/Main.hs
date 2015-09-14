@@ -138,7 +138,7 @@ applyAction steamid c r p = do
 
   appName <- conv $ name action'
   exe <- conv $ actionCmd action'
-  startDir <- conv $ maybeDefault (Config.startDir action') (InterpLookup "dir")
+  startDir <- conv $ maybeDefault (Config.startDir action') (InterpJoin (InterpLookup "dir") (InterpPlain ""))
   icon <- conv $ maybeDefault (Config.icon action') (InterpPlain "")
   tags <- mapM conv (Config.tags action')
 
