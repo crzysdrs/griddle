@@ -5,34 +5,34 @@
     ],
     "gridproviders":{
         "consolegrid":{
-            "cmd":"wget http://consolegrid.com/api/top_picture?console={urlencode{console}}&game={urlencode{game}} -O gridurl && wget $(cat gridurl) -O {img}"
+            "cmd":"/bin/bash wget http://consolegrid.com/api/top_picture?console={urlencode{console}}&game={urlencode{game}} -O gridurl && wget $(cat gridurl) -O {img}"
         }
     },
     "actions":{
         "Super Nintendo":{
             "provider":"consolegrid",
-            "provider_args":{"console":"{action}", "game":"{base}"},
+            "provider_args":{"console":"SNES", "game":"{base}"},
             "name":"{base}",
             "cmd":"/usr/bin/zsnes -v 4 \"{match}\"",
             "tags":["{action}"]
         },
         "GameCube":{
             "provider":"consolegrid",
-            "provider_args":{"console":"{action}", "game":"{base}"},
+            "provider_args":{"console":"GameCube", "game":"{base}"},
             "name":"{base}",
             "cmd":"/usr/games/dolphin-emu --batch --exec=\"{match}\"",
             "tags":["{action}"]
         },
         "Mednafen":{
             "provider":"consolegrid",
-            "provider_args":{"console":"{rule}", "game":"{base}"},
+            "provider_args":{"console":"{console}", "game":"{base}"},
             "name":"{base}",
             "cmd":"/usr/games/mednafen -video.fs 1 \"{match}\"",
             "tags":["{rule}"]
         },
         "pcsx2":{
             "provider":"consolegrid",
-            "provider_args":{"console":"{rule}", "game":"{base}"},
+            "provider_args":{"console":"PS2", "game":"{base}"},
             "name":"{base}",
             "cmd":"/usr/games/PCSX2 --nogui --noguiprompt \"{match}\" --fullscreen",
             "tags":["{rule}"]
@@ -59,16 +59,19 @@
         {
             "title":"Game Boy Advance",
             "match":"/GBA/",
+            "action_args":{"console":"GBA"},
             "action":"Mednafen"
         },
         {
             "title":"Game Boy Color",
             "match":"/GBC/",
+            "action_args":{"console":"GameBoy"},
             "action":"Mednafen"
         },
         {
             "title":"Nintendo Entertainment System",
             "match":"/NES/",
+            "action_args":{"console":"NES"},
             "action":"Mednafen"
         },
         {
