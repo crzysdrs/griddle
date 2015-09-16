@@ -34,7 +34,7 @@ mergeString [] = []
 
 interpSuite :: Test
 interpSuite = testGroup "InterpSuite"
-   [ testProperty "interpString Round Trip" prop_interpStringRoundTrip ]
-
-prop_interpStringRoundTrip :: InterpString -> Bool
-prop_interpStringRoundTrip is = parseInterpString (deparseInterpString is) == mergeString is
+   [
+    testProperty "interpString Round Trip" $
+      \is -> parseInterpString (deparseInterpString is) == mergeString is
+   ]

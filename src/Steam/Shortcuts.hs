@@ -5,7 +5,8 @@ module Steam.Shortcuts
      SteamShortcut(..),
      readShortcuts,
      writeShortcuts,
-     appid
+     appid,
+     VDFList(..)
     )
     where
 import           Data.Aeson
@@ -20,16 +21,19 @@ import           Data.Word
 import           Debug.Trace
 import           Steam
 import           Steam.BinVDF
+import Data.List
+import qualified  Data.Vector as V
 data SteamShortcut = SteamShortcut {
       appName :: String,
       exe :: String,
       startDir :: String,
       icon :: String,
-      tags :: [String],
+      tags :: VDFList String,
       hidden :: Maybe Int,
       path :: Maybe String
     } deriving (Show)
 
+data VDFList a = VDFList [a] deriving (Show)
 appid :: SteamShortcut -> Word64
 appid s =  ((bits32 .|. bit 31) `shiftL` 32) .|. bit 25
            where bits32 = fromIntegral (crc32 $ byteString (exe s ++ appName s))
@@ -41,6 +45,18 @@ jsonLower :: Value -> Value
 jsonLower (Object o) = Object . HM.fromList . map lowerPair . HM.toList $ o
   where lowerPair (key, val) = (T.toLower key, val)
 jsonLower x = x
+
+instance (FromJSON a) => FromJSON (VDFList a) where
+  parseJSON = withObject "Vector" $ \o -> do
+    let (keys, _) = unzip $ HM.toList o
+        keys' = sort (keys)
+    if keys' == map (T.pack . show) [0..length keys' - 1]
+      then do vals <- mapM ((.:) o) keys'
+              return $ VDFList vals
+      else fail ("Not a VDF array")
+
+instance (ToJSON a) => ToJSON (VDFList a) where
+    toJSON (VDFList xs) = object (zip (map (T.pack . show) [(0 :: Int)..]) (map toJSON xs))
 
 instance FromJSON SteamShortcut where
     parseJSON =  withObject "shortcut" buildShortcut . jsonLower

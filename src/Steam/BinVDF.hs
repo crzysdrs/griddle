@@ -2,11 +2,14 @@
 module Steam.BinVDF
     (
      readBinVDF,
-     writeBinVDF
+     writeBinVDF,
+     jsonVDF,
+     vdfJSON
     )
     where
 import           Control.Monad
 import           Data.Aeson
+import           Data.Bits
 import           Data.Scientific
 import qualified Data.Binary.Get as BinGet
 import qualified Data.Binary.Put as BinPut
@@ -22,10 +25,12 @@ import           Steam
 import           Text.ParserCombinators.Parsec as Parsec
 data VDFType = VDFKeyT | VDFStrT | VDFIntT | VDFErrT deriving (Enum)
 
+{-
 vdfObject :: [(T.Text, Value)] -> Value
 vdfObject o = if fst (unzip o) == map (T.pack . show) [0..length o - 1]
               then Array $ V.fromList $ snd (unzip o)
               else object o
+-}
 
 steamVDF :: GenParser Char st Value
 steamVDF =
@@ -40,7 +45,7 @@ vdfRValue name =
       VDFKeyT -> do
         r <- manyTill vdfKeyValue (lookAhead $ try (Parsec.char '\0008'))
         Parsec.char '\0008'
-        return $ vdfObject r
+        return $ object r
       VDFStrT -> do
         s <- vdfString
         return $ String s
@@ -69,28 +74,35 @@ vdfInt =
       return $ Number $ scientific (toInteger $ bytes2Int result) 0
 
 bytes2Int :: String -> Int
-bytes2Int cs  = fromIntegral $ BinGet.runGet BinGet.getWord32le $ C.pack cs
+bytes2Int cs = if v > bit 31
+              then v - bit 32
+              else v
+  where v = fromIntegral $ BinGet.runGet BinGet.getWord32host $ C.pack cs
 
 int2Bytes :: Int -> String
-int2Bytes i = C.unpack $ BinPut.runPut (BinPut.putWord32le (fromIntegral i))
+int2Bytes i = C.unpack $ BinPut.runPut (BinPut.putWord32host (fromIntegral i))
 
 readBinVDF :: String -> IO (Maybe Value)
 readBinVDF s = do
   input <- readFile s
-  return $ case parse steamVDF s input of
-    Left _ ->  Nothing
-    Right r -> Just r
+  return $ vdfJSON s input
+
+vdfJSON :: String -> String -> Maybe Value
+vdfJSON filename s = case parse steamVDF filename s of
+  Left _ ->  Nothing
+  Right r -> Just r
 
 writeBinVDF :: FilePath -> Value -> IO ()
 writeBinVDF p v = writeFile p (jsonVDF v)
 
-
 writeVDFStr :: T.Text -> String
-writeVDFStr s = T.unpack s ++ "\0000"
+writeVDFStr s = if or (map ((==) '\NUL') (T.unpack s))
+                then error "Unable to emit NULL values in Strings to VDF"
+                else T.unpack s ++ "\0000"
 
 jsonVDFEnum :: Value -> VDFType
 jsonVDFEnum (Object _) = VDFKeyT
-jsonVDFEnum (Array _) = VDFKeyT
+--jsonVDFEnum (Array _) = VDFKeyT
 jsonVDFEnum (String _) = VDFStrT
 jsonVDFEnum (Number _) = VDFIntT
 jsonVDFEnum _ = error "JSONVDF Type Enum Should Not be Used"
@@ -105,7 +117,7 @@ jsonFixedOrder ts = concatMap pair (filter removeNull ts) ++ "\0008"
           removeNull (t,v) = not $ isNull v
 jsonVDF :: Value -> String
 jsonVDF (Object h) = jsonFixedOrder (HM.toList h)
-jsonVDF (Array vec) = jsonFixedOrder $ zip (map (T.pack . show) [0..]) (V.toList vec)
+--jsonVDF (Array vec) = jsonFixedOrder $ zip (map (T.pack . show) [0..]) (V.toList vec)
 jsonVDF (String s) = writeVDFStr s
 jsonVDF (Number i) = int2Bytes (case floatingOrInteger i of
                                   Left l -> error "Can't write Floating Point"

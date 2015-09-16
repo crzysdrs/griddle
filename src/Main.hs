@@ -147,7 +147,7 @@ applyAction steamid c r p = do
     exe=exe,
     Steam.Shortcuts.startDir=startDir,
     Steam.Shortcuts.icon=icon,
-    Steam.Shortcuts.tags="griddle":tags,
+    Steam.Shortcuts.tags=VDFList ("griddle":tags),
     Steam.Shortcuts.path=Nothing,
     hidden=Nothing
   }
@@ -176,7 +176,9 @@ runProvider p = do
   return ()
 
 managedByGriddle :: SteamShortcut -> Bool
-managedByGriddle s = "griddle" `elem` Steam.Shortcuts.tags s
+managedByGriddle s = "griddle" `elem` es
+  where es = case Steam.Shortcuts.tags s of
+          (VDFList l) -> l
 
 manageShortcuts :: SteamID -> Config -> [(FilePath, GriddleRule)] -> IO ()
 manageShortcuts steamID config matchedRules = do
