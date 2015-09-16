@@ -1,6 +1,8 @@
 language: haskell
-script:
-  - cabal configure --enable-tests --enable-library-coverage && cabal build && cabal test
-after_script:
+before_install:
   - cabal install codecov-haskell
-  - codecov-haskell test --exclude-dir=test
+script:
+  - cabal configure --enable-tests --enable-library-coverage && cabal build
+  - run-cabal-test  --exclude-dir=test test
+after_script:
+  - codecov-haskell --exclude-dir=test test
