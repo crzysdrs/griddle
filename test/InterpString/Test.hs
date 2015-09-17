@@ -2,6 +2,7 @@ module InterpString.Test where
 
 import Control.Monad
 import InterpString
+import qualified Data.HashMap.Strict as HM
 import Test.Framework (testGroup, Test)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck
@@ -36,5 +37,36 @@ interpSuite :: Test
 interpSuite = testGroup "InterpSuite"
    [
     testProperty "interpString Round Trip" $
-      \is -> parseInterpString (deparseInterpString is) == mergeString is
+      \is -> parseInterpString (deparseInterpString is) == mergeString is,
+    testProperty "interpString Generate" prop_genInterpString
    ]
+
+interpKeys :: HM.HashMap String String
+interpKeys = HM.fromList [("test", "123"), ("other", "576")]
+interpFuncs :: HM.HashMap String (String -> String)
+interpFuncs = HM.fromList [("id", id), ("xout", map (\x -> 'x'))]
+
+validInterpString :: Gen InterpString
+validInterpString = do
+  is <- arbitrary
+  mapM validInterpTop is
+
+validInterpTop :: InterpTop -> Gen InterpTop
+validInterpTop (InterpElem e) = do
+  newE <- validInterpNode e
+  return $ InterpElem newE
+validInterpTop x = return $ x
+
+validInterpNode :: InterpNode -> Gen InterpNode
+validInterpNode (InterpCmd _ n) = do
+  k <- oneof $ map return $ HM.keys interpFuncs
+  newN <- validInterpNode n
+  return $ InterpCmd k newN
+validInterpNode (InterpLookup _) = do
+  l <- oneof $ map return $ HM.keys interpKeys
+  return $ InterpLookup l
+
+prop_genInterpString = forAll validInterpString $ \is ->
+    case convertInterpString interpKeys interpFuncs is of
+      Right r -> True
+      Left l -> False
