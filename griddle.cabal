@@ -57,9 +57,11 @@ library
                        safe,
                        digest,
                        QuickCheck
-  exposed-modules:
-                       InterpString,
-                       Steam.BinVDF
+  exposed-modules:     InterpString,
+                       Steam.BinVDF,
+                       Steam.Shortcuts,
+                       Steam
+
   default-language:    Haskell2010
   exposed: True
   buildable: True

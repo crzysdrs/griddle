@@ -6,7 +6,9 @@ module Steam.Shortcuts
      readShortcuts,
      writeShortcuts,
      appid,
-     VDFList(..)
+     VDFList(..),
+     deparseShortcuts,
+     parseShortcuts
     )
     where
 import           Data.Aeson
@@ -17,6 +19,7 @@ import           Data.Digest.CRC32
 import qualified Data.HashMap.Strict as HM
 import           Data.Maybe
 import qualified Data.Text as T
+import           Text.Read
 import           Data.Word
 import           Debug.Trace
 import           Steam
@@ -31,9 +34,9 @@ data SteamShortcut = SteamShortcut {
       tags :: VDFList String,
       hidden :: Maybe Int,
       path :: Maybe String
-    } deriving (Show)
+    } deriving (Show, Eq)
 
-data VDFList a = VDFList [a] deriving (Show)
+data VDFList a = VDFList [a] deriving (Show, Eq)
 appid :: SteamShortcut -> Word64
 appid s =  ((bits32 .|. bit 31) `shiftL` 32) .|. bit 25
            where bits32 = fromIntegral (crc32 $ byteString (exe s ++ appName s))
@@ -49,11 +52,15 @@ jsonLower x = x
 instance (FromJSON a) => FromJSON (VDFList a) where
   parseJSON = withObject "Vector" $ \o -> do
     let (keys, _) = unzip $ HM.toList o
-        keys' = sort (keys)
-    if keys' == map (T.pack . show) [0..length keys' - 1]
-      then do vals <- mapM ((.:) o) keys'
-              return $ VDFList vals
-      else fail ("Not a VDF array")
+        knums = do
+          mapM (readMaybe .T.unpack) keys
+        asc = [0..length keys - 1]
+    case knums of
+      Just ks -> if sort ks == asc
+                 then do vals <- mapM ((.:) o . T.pack . show) asc
+                         return $ VDFList vals
+                 else fail ("Not consistent numbering VDF array")
+      Nothing -> fail ("Not all numeric VDF array")
 
 instance (ToJSON a) => ToJSON (VDFList a) where
     toJSON (VDFList xs) = object (zip (map (T.pack . show) [(0 :: Int)..]) (map toJSON xs))
@@ -86,17 +93,23 @@ shortcuts :: Value -> Parser [SteamShortcut]
 shortcuts =  withObject "x"  (.: "shortcuts") . jsonLower
 
 readShortcuts :: SteamID -> IO (Maybe [SteamShortcut])
-readShortcuts s = readShortcutsStr (shortcutFileLoc s)
+readShortcuts s = readShortcutsFile (shortcutFileLoc s)
 
-readShortcutsStr :: String -> IO (Maybe [SteamShortcut])
-readShortcutsStr s = do
+parseShortcuts :: Value -> Maybe [SteamShortcut]
+parseShortcuts vdf = parseMaybe shortcuts vdf
+
+readShortcutsFile :: String -> IO (Maybe [SteamShortcut])
+readShortcutsFile s = do
   vdf <- readBinVDF s
   case vdf of
-    Just n ->  return $ parseMaybe shortcuts n
+    Just n ->  return $ parseShortcuts n
     Nothing -> return Nothing
 
 writeShortcuts :: SteamID -> [SteamShortcut] -> IO ()
-writeShortcuts steamid = writeShortcutsStr (shortcutFileLoc steamid)
+writeShortcuts steamid = writeShortcutsFile (shortcutFileLoc steamid)
 
-writeShortcutsStr :: FilePath -> [SteamShortcut] -> IO ()
-writeShortcutsStr p shorts = writeBinVDF p $ Object $ HM.fromList [("Shortcuts", toJSON shorts)]
+writeShortcutsFile :: FilePath -> [SteamShortcut] -> IO ()
+writeShortcutsFile p shorts = writeBinVDF p $ deparseShortcuts shorts
+
+deparseShortcuts :: [SteamShortcut] -> Value
+deparseShortcuts shortcuts = Object $ HM.fromList [("Shortcuts", toJSON shortcuts)]
